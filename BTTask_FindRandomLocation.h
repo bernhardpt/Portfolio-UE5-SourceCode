@@ -1,6 +1,4 @@
-﻿// Preencher aviso de copyright no editor do Unreal.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/Tasks/BTTask_BlackboardBase.h"
@@ -15,10 +13,11 @@ public:
 	UBTTask_FindRandomLocation();
 
 protected:
-	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override; //Função que é chamada quando a tarefa é executada
+	// Core execution function triggered by the Behavior Tree
+	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
 private:
+	// Maximum radius to search for a valid patrol point on the NavMesh
 	UPROPERTY(EditAnywhere, Category = "C++ | AI")
-	float SearchRadius = 500.0f; //Raio de busca para encontrar um ponto aleatório
-
+	float SearchRadius = 500.0f;
 };

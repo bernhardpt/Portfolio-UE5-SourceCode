@@ -1,6 +1,4 @@
-﻿// Preencher aviso de copyright no editor do Unreal.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -9,17 +7,13 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerCharacter.generated.h"
 
-
-//*** ENUMERAÇÃO PARA A DIFICULDADE ***
-
 UENUM(BlueprintType)
 enum class EGameDifficulty : uint8
 {
-    Easy    UMETA(DisplayName = "Fácil"),
+    Easy    UMETA(DisplayName = "Easy"),
     Normal  UMETA(DisplayName = "Normal"),
-    Hard    UMETA(DisplayName = "Difícil")
+    Hard    UMETA(DisplayName = "Hard")
 };
-
 
 UCLASS()
 class ZOMBIESHOOTER_API APlayerCharacter : public ACharacter
@@ -27,263 +21,162 @@ class ZOMBIESHOOTER_API APlayerCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Valores iniciais for this character's properties
 	APlayerCharacter();
 
 protected:
-	// Chamado quando o jogo comeÃ§a ou quando o ator Ã© criado
 	virtual void BeginPlay() override;
 
 public:	
-	// Chamado em cada frame
 	virtual void Tick(float DeltaTime) override;
-
-	// Liga aÃ§Ãµes aos inputs
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
-	//*** CÂMARA ***
-
-	//Braço da câmara
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="C++ | Câmara")
+	// --- CAMERA COMPONENTS ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="C++ | Camera")
 	class USpringArmComponent* CameraBoom;
 	
-	//Câmara de terceira pessoa
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="C++ | Câmara")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="C++ | Camera")
 	class UCameraComponent* FollowCamera;
 
-
-	//*** CONTROLOS ***
-
-	//IMC
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	// --- ENHANCED INPUT SYSTEM ---
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	class UInputMappingContext* DefaultMappingContext;
 
-	//Mover
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	class UInputAction* MoveAction;
 	
-	//Olhar
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* LookAction;
 
-	//Saltar
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* JumpAction;
 
-	//Sprintar
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* SprintAction;
 
-	//Agachar
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* CrouchAction;
 
-	//Disparar
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* FireAction;
 
-	//Mirar
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* AimAction;
 
-	//Recarregar
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* ReloadAction;
 
-	//Equipar espingarda
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* EquipRifleAction;
 
-	//Equipar pistola
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Controlos")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="C++ | Input")
 	UInputAction* EquipPistolAction;
 
-	/*
-	 * COLOCAR AQUI A CONFIGURAÇÃO DO INPUT DO MENU DA PAUSA
-	 */
-
-	//*** FUNÇÕES DE CONTROLOS ***
-
-	//Função para mover
 	void Move(const FInputActionValue& Value);
-
-	//Função para olhar
 	void Look(const FInputActionValue& Value);
-
-	//Funções para sprintar
 	void StartSprint();
 	void StopSprint();
-
-	//Funções para agachar
 	void StartCrouch();
 	void StopCrouch();
-
-	//Função personalizada de salto para o gasto de resistência
 	void CheckJump();
 
-	
-	//*** SISTEMA DE ARMAS ***
-
-	//Arma atual
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Combate")
+	// --- COMBAT & INVENTORY SYSTEM ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Combat")
 	class ABaseWeapon* CurrentWeapon;
 
-	//Referência para a espingarda
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "C++ | Combate")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "C++ | Combat")
 	ABaseWeapon* RifleRef;
 
-	//Referência para a pistola
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "C++ | Combate")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "C++ | Combat")
 	ABaseWeapon* PistolRef;
 
-	//Classe da espingarda
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++ | Combate")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++ | Combat")
 	TSubclassOf<ABaseWeapon> RifleClass;
 
-	//Classe da pistola
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++ | Combate")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++ | Combat")
 	TSubclassOf<ABaseWeapon> PistolClass;
 
-	//Função de começo de disparo
 	void StartWeaponFire();
-
-	//Função de fim de disparo
 	void StopWeaponFire();
-
-	//Função de recarga
 	void ReloadWeapon();
-
-	//Função para equipar a espingarda (input)
 	void EquipRifle();
-
-	//Função para equipar a pistola (input)
 	void EquipPistol();
-
-	//Função que trata de equipar fisicamente as armas
 	void EquipWeaponInternal(ABaseWeapon* WeaponToEquip, bool bPlayAnimation);
-	
-	//Função de começo de mira
 	void StartAim();
-
-	//Função de fim de mira
 	void StopAim();
-
-	//Variável para guardar o FOV original
-	float DefaultFOV = 80.0f;
-
-	//Variável para saber se o jogador está a mirar
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Combate")
-	bool bIsAiming;
-
-	//Variável para saber se está a recarregar
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Combate")
-	bool bIsReloading;
-
-	//Temporizador para lidar com a recarga
-	FTimerHandle TimerHandle_Reload;
-
-	//Função para lidar com o fim da animação de recarga
 	void FinishReload();
 
-	//Função central para alterar a velocidade
+	float DefaultFOV = 80.0f;
+	FTimerHandle TimerHandle_Reload;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Combat")
+	bool bIsAiming;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Combat")
+	bool bIsReloading;
+
 	void UpdateMovementSpeed();
 
-	
-	//*** ATRIBUTOS ***
-
-	//Vida máxima
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++ | Atributos")
+	// --- PLAYER ATTRIBUTES ---
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++ | Attributes")
 	float MaxHealth = 100.0f;
 
-	//Vida atual
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Atributos")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Attributes")
 	float CurrentHealth;
 
-	//Resistência máxima
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++ | Atributos")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++ | Attributes")
 	float MaxStamina = 100.0f;
 
-	//Resistência atual
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Atributos")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++ | Attributes")
 	float CurrentStamina;
 
-	//Gasto de resistência por segundo a sprintar
-	UPROPERTY(EditDefaultsOnly, Category = "C++ | Atributos")
+	UPROPERTY(EditDefaultsOnly, Category = "C++ | Attributes")
 	float SprintStaminaCost = 20.0f;
 
-	//Recuperação de resistência por segundo
-	UPROPERTY(EditDefaultsOnly, Category = "C++ | Atributos")
+	UPROPERTY(EditDefaultsOnly, Category = "C++ | Attributes")
 	float StaminaRegenRate = 10.0f;
 
-	//Gasto de resistência por salto
-	UPROPERTY(EditDefaultsOnly, Category = "C++ | Atributos")
+	UPROPERTY(EditDefaultsOnly, Category = "C++ | Attributes")
 	float JumpStaminaCost = 10.0f;
 
-	//Velocidade normal
-	UPROPERTY(EditDefaultsOnly, Category = "C++ | Movimento")
+	UPROPERTY(EditDefaultsOnly, Category = "C++ | Movement")
 	float WalkSpeed = 600.0f;
 
-	//Velocidade de sprint
-	UPROPERTY(EditDefaultsOnly, Category = "C++ | Movimento")
+	UPROPERTY(EditDefaultsOnly, Category = "C++ | Movement")
 	float SprintSpeed = 900.0f;
 
-	//Variável de controlo para ver se o jogador está a sprintar
 	bool bIsSprinting;
-
-	//Função para lidar com a resistência
 	void ManageStamina(float DeltaTime);
 
-
-	//*** SISTEMA DE DANO ***
-
-	//Variável para armazenar a dificuldade atual
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++ | Configuração do Jogo")
+	// --- DAMAGE & HEALTH SYSTEM ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++ | Config")
 	EGameDifficulty CurrentDifficulty = EGameDifficulty::Normal;
 
-	//Função chamada quando o jogador morre
-	UFUNCTION(BlueprintNativeEvent, Category = "C++ | Combate")
+	UFUNCTION(BlueprintNativeEvent, Category = "C++ | Combat")
 	void OnDeath();
 	
-	//Override da função nativa do UE
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
-	
-	//*** HUD ***
-
-	//Função para saber que arma está na mão
-	UFUNCTION(BlueprintCallable, Category = "C++ | Combate")
+	// --- HUD ---
+	UFUNCTION(BlueprintCallable, Category = "C++ | Combat")
 	ABaseWeapon* GetCurrentWeapon() const;
 
-	//Variável para escolher o Widget no Editor (WBP_HUD)
 	UPROPERTY(EditDefaultsOnly, Category = "C++ | UI")
 	TSubclassOf<UUserWidget> HUDWidgetClass;
 
-	//Referência para o widget criado
 	UPROPERTY()
 	UUserWidget* HUDWidgetInstance;
 
-
-	//*** PICKUPS ***
-
-	//Função para Curar
+	// --- PICKUP INTERACTIONS ---
 	bool Heal(float Amount);
-
-	//Função para receber munição
 	void AddAmmo(TSubclassOf<class ABaseWeapon> WeaponType, int32 Amount);
 
-	//Função chamada pela animação
-	UFUNCTION(BlueprintCallable, Category = "C++ | Som")
+	// --- AUDIO SYSTEM ---
+	UFUNCTION(BlueprintCallable, Category = "C++ | Audio")
 	void PlayFootstepSound();
 
-	//Sons para diferentes superfícies
-	UPROPERTY(EditDefaultsOnly, Category = "C++ | Som")
-	USoundBase* FootstepSoundDefault; //Som genérico (obrigatório)
+	UPROPERTY(EditDefaultsOnly, Category = "C++ | Audio")
+	USoundBase* FootstepSoundDefault; 
 	
-	UPROPERTY(EditDefaultsOnly, Category = "C++ | Som")
+	UPROPERTY(EditDefaultsOnly, Category = "C++ | Audio")
 	USoundBase* FootstepSoundDirt;
 };
-
-
-
-

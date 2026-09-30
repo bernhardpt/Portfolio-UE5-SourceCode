@@ -1,6 +1,4 @@
-﻿// Preencher aviso de copyright no editor do Unreal.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "AIController.h"
@@ -17,31 +15,22 @@ class ZOMBIESHOOTER_API AZombieAIController : public AAIController
 	GENERATED_BODY()
 
 public:
-	//Construtor
 	AZombieAIController();
 	
-	//O cérebro (a atribuir no editor)
+	// Behavior Tree asset assigned in editor
 	UPROPERTY(EditDefaultsOnly, Category = "C++ | AI")
 	UBehaviorTree* BehaviorTreeAsset;
 
-	//Componente que vê
-	UPROPERTY(VisibleAnywhere, Category = "AI")
+	// Perception component managing senses
+	UPROPERTY(VisibleAnywhere, Category = "C++ | AI")
 	UAIPerceptionComponent* AIPerceptionComp;
 
-	//Configuração da visão
 	UAISenseConfig_Sight* SightConfig;
-
-	//Configuração da audição
 	UAISenseConfig_Hearing* HearingConfig;
 
-	//Função chamada quando o sensor deteta algo
+	// Callback triggered when perception stimuli are updated
 	UFUNCTION()
 	void OnTargetDetected(AActor* Actor, FAIStimulus Stimulus);
 
-	//Override da função
 	virtual void OnPossess(APawn* InPawn) override;
 };
-
-
-
-

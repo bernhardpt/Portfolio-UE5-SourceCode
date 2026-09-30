@@ -1,14 +1,9 @@
-﻿// Preencher aviso de copyright no editor do Unreal.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "BaseWeapon.h"
 #include "Pistol.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class ZOMBIESHOOTER_API APistol : public ABaseWeapon
 {
@@ -17,7 +12,3 @@ class ZOMBIESHOOTER_API APistol : public ABaseWeapon
 public:
 	APistol();
 };
-
-
-
-

@@ -1,92 +1,209 @@
-﻿// Preencher aviso de copyright no editor do Unreal.
-
-
+﻿#include "ZombieCharacter.h"
+#include "Components/WidgetComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "BrainComponent.h"
 #include "ZombieAIController.h"
-#include "Perception/AIPerceptionComponent.h"
-#include "Perception/AISenseConfig_Sight.h"
-#include "Perception/AISenseConfig_Hearing.h"
-#include "BehaviorTree/BlackboardComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Kismet/GameplayStatics.h"
 #include "PlayerCharacter.h"
+#include "MainGameMode.h"
 
-AZombieAIController::AZombieAIController()
+AZombieCharacter::AZombieCharacter()
 {
-	//Criação do componente de perceção
-	AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComp"));
-    
-	//Criação e configuração da visão
-	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
-    
-	SightConfig->SightRadius = 1000.0f; //Vê até 10 metros
-	SightConfig->LoseSightRadius = 1200.0f; //Deixa de ver aos 12m
-	SightConfig->PeripheralVisionAngleDegrees = 60.0f; //Campo de visão
+ 	PrimaryActorTick.bCanEverTick = true;
 
-	//Configuração da audição
-	HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
-	HearingConfig->HearingRange = 3000.0f; //30 metros
-	HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
-	HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
-	HearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
-	AIPerceptionComp->ConfigureSense(*HearingConfig);
-	
-	//Configurações de deteção
-	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
-	SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
-	SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+	AIControllerClass = AZombieAIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-	//Regista o sentido no componente
-	AIPerceptionComp->ConfigureSense(*SightConfig);
-	AIPerceptionComp->SetDominantSense(SightConfig->GetSenseImplementation());
+	// Setup floating health bar widget component
+	HealthBarWidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarComp"));
+	HealthBarWidgetComp->SetupAttachment(GetRootComponent());
+	HealthBarWidgetComp->SetWidgetSpace(EWidgetSpace::Screen); 
+	HealthBarWidgetComp->SetDrawSize(FVector2D(100.0f, 10.0f));
+	HealthBarWidgetComp->SetRelativeLocation(FVector(0.0f, 0.0f, 90.0f)); 
+	HealthBarWidgetComp->SetVisibility(false); 
 }
 
-void AZombieAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
+void AZombieCharacter::BeginPlay()
 {
-	//Se a blackboard não for válida, interrompe
-	if (!GetBlackboardComponent()) return;
+	Super::BeginPlay();
+	CurrentHealth = MaxHealth;
 
-	//Verifica se o estímulo foi visual
-	if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
+	// Initialize ambient sound loop with a random initial offset to desynchronize hordes
+	float RandomInterval = FMath::RandRange(2.0f, 10.0f);
+	GetWorldTimerManager().SetTimer(TimerHandle_AmbientSound, this, &AZombieCharacter::PlayAmbientSound, RandomInterval, false);
+}
+
+void AZombieCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+void AZombieCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+void AZombieCharacter::HideHealthBar()
+{
+	HealthBarWidgetComp->SetVisibility(false);
+}
+
+float AZombieCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (bIsDead) return 0.0f;
+
+	float DamageToApply = DamageAmount;
+
+	// Scale damage received based on GameMode difficulty settings
+	if (AMainGameMode* GM = Cast<AMainGameMode>(GetWorld()->GetAuthGameMode()))
 	{
-		if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(Actor))
+		DamageToApply *= GM->PlayerDmgMult();
+	}
+
+	float ActualDamage = Super::TakeDamage(DamageToApply, DamageEvent, EventInstigator, DamageCauser);
+	CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, MaxHealth);
+    
+	if (CurrentHealth <= 0.0f)
+	{
+		Die(); 
+        
+		if (AMainGameMode* GM = Cast<AMainGameMode>(GetWorld()->GetAuthGameMode()))
 		{
-			if (Stimulus.WasSuccessfullySensed())
-			{
-				GetBlackboardComponent()->SetValueAsObject(TEXT("TargetActor"), PlayerCharacter);
-				GetBlackboardComponent()->SetValueAsBool(TEXT("IsAlerted"), true);
-			}
-			else
-			{
-				GetBlackboardComponent()->ClearValue(TEXT("TargetActor"));
-			}
+			GM->OnZombieKilled(EventInstigator);
 		}
 	}
-	//Verifica se o estímulo foi auditivo
-	else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
+	else
 	{
-		if (Stimulus.WasSuccessfullySensed())
+		// Display health bar upon taking damage and reset hide timer
+		if (HealthBarWidgetComp)
 		{
-			GetBlackboardComponent()->SetValueAsVector(TEXT("SoundLocation"), Stimulus.StimulusLocation);
-			GetBlackboardComponent()->SetValueAsBool(TEXT("IsAlerted"), true);
+			HealthBarWidgetComp->SetVisibility(true);
+            
+			GetWorldTimerManager().ClearTimer(TimerHandle_HideHealthBar);
+			GetWorldTimerManager().SetTimer(TimerHandle_HideHealthBar, this, &AZombieCharacter::HideHealthBar, 3.0f, false);
+		}
+	}
+
+	return ActualDamage;
+}
+
+void AZombieCharacter::PlayAttackAnimation()
+{
+	if (AttackMontage && !GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
+	{
+		PlayAnimMontage(AttackMontage);
+
+		if (AttackSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, AttackSound, GetActorLocation());
 		}
 	}
 }
 
-void AZombieAIController::OnPossess(APawn* InPawn)
-{
-	Super::OnPossess(InPawn);
+void AZourceCharacter::OnAttackHit() {} // Placeholder for scope, actual logic below:
 
-	//Liga a função ao evento de deteção
-	if (AIPerceptionComp)
+void AZombieCharacter::OnAttackHit()
+{
+	ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+
+	if (PlayerChar)
 	{
-		AIPerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AZombieAIController::OnTargetDetected);
-	}
-	
-	//Se houver um BT e um zombie válido
-	if (BehaviorTreeAsset && InPawn)
-	{
-		RunBehaviorTree(BehaviorTreeAsset);
+		float Distance = FVector::Dist(GetActorLocation(), PlayerChar->GetActorLocation());
+
+		if (Distance <= AttackRange)
+		{
+			UGameplayStatics::ApplyDamage(
+				PlayerChar,
+				AttackDamage,
+				GetController(),
+				this,
+				UDamageType::StaticClass()
+			);
+		}
 	}
 }
 
+void AZombieCharacter::Die()
+{
+	bIsDead = true;
 
+	if (DeathMontage)
+	{
+		PlayAnimMontage(DeathMontage);
+	}
 
+	// Halt AI behavior tree logic immediately
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (AIController->GetBrainComponent())
+		{
+			AIController->GetBrainComponent()->StopLogic("Dead");
+		}
+		AIController->StopMovement();
+	}
 
+	// Disable capsule collision so the player can walk over the corpse
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+
+	HealthBarWidgetComp->SetVisibility(false);
+
+	// Garbage collection: clean up corpse after 10 seconds
+	SetLifeSpan(10.0f);
+}
+
+void AZombieCharacter::PlayAmbientSound()
+{
+	if (bIsDead) return;
+
+	if (AmbientSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, AmbientSound, GetActorLocation());
+	}
+
+	float NextInterval = FMath::RandRange(5.0f, 15.0f);
+	GetWorldTimerManager().SetTimer(TimerHandle_AmbientSound, this, &AZombieCharacter::PlayAmbientSound, NextInterval, false);
+}
+
+void AZombieCharacter::PlayFootstepSound()
+{
+	FVector Start = GetActorLocation();
+	FVector End = Start - FVector(0, 0, 150); 
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.bReturnPhysicalMaterial = true; 
+
+	FHitResult Hit;
+	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+
+	USoundBase* SoundToPlay = FootstepSoundDefault; 
+
+	if (bHit && Hit.PhysMaterial.IsValid())
+	{
+		EPhysicalSurface SurfaceType = Hit.PhysMaterial->SurfaceType;
+
+		switch (SurfaceType)
+		{
+		case SurfaceType1:
+			SoundToPlay = FootstepSoundDefault; 
+			break;
+		case SurfaceType2:
+			if (FootstepSoundDirt) SoundToPlay = FootstepSoundDirt;
+			break;
+		default: 
+			SoundToPlay = FootstepSoundDefault;
+			break;
+		}
+	}
+
+	if (SoundToPlay)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation(), 1.0f, FMath::RandRange(0.9f, 1.1f));
+	}
+}

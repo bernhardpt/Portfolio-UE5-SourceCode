@@ -1,13 +1,10 @@
-﻿// Preencher aviso de copyright no editor do Unreal.
-
-
-#include "PickupHealth.h"
+﻿#include "PickupHealth.h"
 #include "PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 
 void APickupHealth::OnPickup(APlayerCharacter* Player)
 {
-	//Só destrói se o jogador realmente aceitou a cura
+	// Only consume the pickup if the player actually requires healing
 	if (Player->Heal(HealAmount))
 	{
 		if (PickupSound)
@@ -15,20 +12,15 @@ void APickupHealth::OnPickup(APlayerCharacter* Player)
 			UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
 		}
 		
+		// Deactivate and hide the pickup until the GameMode resets it for the next wave
 		bIsActive = false;
 		SetActorHiddenInGame(true);
 		SetActorEnableCollision(false);
 		
-		
-		UE_LOG(LogTemp, Log, TEXT("Curado!"));
-		
+		UE_LOG(LogTemp, Log, TEXT("Player healed."));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("Vida cheia. Pickup ignorado."));
+		UE_LOG(LogTemp, Log, TEXT("Health is already full. Pickup ignored."));
 	}
 }
-
-
-
-

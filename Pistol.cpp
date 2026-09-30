@@ -1,31 +1,14 @@
-﻿// Preencher aviso de copyright no editor do Unreal.
-
-
-#include "Pistol.h"
+﻿#include "Pistol.h"
 
 APistol::APistol()
 {
-	//Valores iniciais
-
-	//Dano
+	// Configure pistol-specific combat parameters
 	BaseDamage = 15.0f;
-
-	//Tempo entre tiros
 	FireRate = 0.25f;
-
-	//Não é automática
 	bIsAutomatic = false;
 
-	//Capacidade do pente
+	// Initialize default ammunition capacities
 	MaxAmmoInMag = 12;
-
-	//Quantidade atual de balas
 	CurrentAmmoInMag = 12;
-
-	//Munição de reserva
 	TotalAmmoReserve = 60;
 }
-
-
-
-
